@@ -3,6 +3,7 @@ import os
 import json
 import requests
 from datetime import datetime, timedelta
+from .Strategy import Stock, Strategy
 
 def getAlphaVantageKey() -> str:
     script_dir = os.path.dirname(__file__) #absolute dir the script is in
@@ -24,7 +25,7 @@ def getStockInfo(alpha_key: str, stock: str) -> dict:
     if res.status_code != 200:
         raise Exception("errore", res.status_code)
     return res.json()
-
+"""
 def formatDate(date) -> str:
     return date.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -73,7 +74,7 @@ def getStochasticIndex(stock_data: dict) -> dict:
     #calculate stock %D
     
     return {"%K": perc_k, "%D": perc_d}    
-
+"""
 
 def main():
     stock = "SRPT" #mock
@@ -82,12 +83,15 @@ def main():
     #print(res_data)
     if not "Time Series (5min)" in res_data:
         raise Exception("Errore recupero dati stock ("+stock+")")
-    stoc_index = getStochasticIndex(res_data["Time Series (5min)"])
-    #print(stoc_index)
-    if stoc_index["%K"] >= 80:
+    #stoc_index = getStochasticIndex(res_data["Time Series (5min)"])
+    strategy = Strategy(stock, res_data, 14)
+    action = strategy.action()
+    if action < 0:
         print("Overbought  market. SELL!")
-    elif:
+    elif action > 0:
         print("Oversold market. BUY!")
+    else:
+        print("Wait")
 
     sys.exit(1)
 
