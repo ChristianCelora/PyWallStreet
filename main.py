@@ -83,7 +83,12 @@ def main():
     if not "Time Series (5min)" in res_data:
         raise Exception("Errore recupero dati stock ("+stock+")")
     stoc_index = getStochasticIndex(res_data["Time Series (5min)"])
-    print(stoc_index)
+    #print(stoc_index)
+    if stoc_index["%K"] >= 80:
+        print("Overbought  market. SELL!")
+    elif:
+        print("Oversold market. BUY!")
+
     sys.exit(1)
 
 if __name__ == "__main__":
