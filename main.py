@@ -3,7 +3,7 @@ import os
 import json
 import requests
 from datetime import datetime, timedelta
-from .Strategy import Stock, Strategy
+import strategy
 
 def getAlphaVantageKey() -> str:
     script_dir = os.path.dirname(__file__) #absolute dir the script is in
