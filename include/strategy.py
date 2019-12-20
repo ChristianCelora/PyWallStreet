@@ -26,7 +26,6 @@ class Strategy:
             if (i > periods):
                 break
             i += 1
-        print(len(self.data))
 
     def action(self) -> int:
         stoc_index = self.getStochasticIndex()

@@ -25,56 +25,6 @@ def getStockInfo(alpha_key: str, stock: str) -> dict:
     if res.status_code != 200:
         raise Exception("errore", res.status_code)
     return res.json()
-"""
-def formatDate(date) -> str:
-    return date.strftime("%Y-%m-%d %H:%M:%S")
-
-def getLowHigh(data: dict, now, past) -> dict:
-    low_price_index = "3. low"
-    high_price_index = "2. high"
-    low = data[formatDate(past)][low_price_index]
-    high = data[formatDate(past)][high_price_index]
-
-    next_data = past
-    while formatDate(next_data) != formatDate(now):
-        next_data = next_data + timedelta(minutes=5)
-        next_data_str = formatDate(next_data)
-        if data[next_data_str][low_price_index] < low:
-            low = data[next_data_str][low_price_index]
-        if data[next_data_str][high_price_index] > high:
-            high = data[next_data_str][high_price_index]
-
-    return {"low": low, "high": high}
-
-def calcKPercent(closing_price: float, high: float, low: float):
-    return (closing_price - low) / (high - low) * 100
-
-def getStochasticIndex(stock_data: dict) -> dict:
-    perc_k = 50
-    perc_d = 50
-    periods = 14
-    closing_price_index = "4. close"
-    #calculate start period and end period
-    first_period = list(stock_data.keys())[0]
-    fp_arr = first_period.split(" ")
-    fp_date = fp_arr[0].split("-")
-    fp_time = fp_arr[1].split(":")
-    now = datetime(int(fp_date[0]), int(fp_date[1]), int(fp_date[2]), int(fp_time[0]), int(fp_time[1]), int(fp_time[2]), 000000)
-    past = now - timedelta(minutes=5*periods)
-    now_str = formatDate(now)
-    past_str = formatDate(past)
-    if not past_str in stock_data:
-        raise Exception(past_str," not in stock data")
-    elif not now_str in stock_data:
-        raise Exception(now_str," not in stock data")
-    limits = getLowHigh(stock_data, now, past)
-    print(limits)
-    #calculate stock %K
-    perc_k = calcKPercent(float(stock_data[now_str][closing_price_index]), float(limits["low"]), float(limits["high"]))
-    #calculate stock %D
-    
-    return {"%K": perc_k, "%D": perc_d}    
-"""
 
 def main():
     stock = "SRPT" #mock
@@ -84,7 +34,7 @@ def main():
     if not "Time Series (5min)" in res_data:
         raise Exception("Errore recupero dati stock ("+stock+")")
     #stoc_index = getStochasticIndex(res_data["Time Series (5min)"])
-    strategy = Strategy(stock, res_data, 14)
+    strategy = Strategy(stock, res_data["Time Series (5min)"], 14)
     action = strategy.action()
     if action < 0:
         print("Overbought  market. SELL!")
