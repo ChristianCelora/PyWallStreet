@@ -10,24 +10,26 @@ class Stock:
     def __init__(self, key: str, time: str, data: dict):
         self.name = key
         self.time = time
-        self.open = data[self.OPEN_INDEX]
-        self.high = data[self.HIGH_INDEX]
-        self.low = data[self.LOW_INDEX]
-        self.close = data[self.CLOSE_INDEX]
-        self.volume = data[self.VOLUME_INDEX]
+        self.open = float(data[self.OPEN_INDEX])
+        self.high = float(data[self.HIGH_INDEX])
+        self.low = float(data[self.LOW_INDEX])
+        self.close = float(data[self.CLOSE_INDEX])
+        self.volume = float(data[self.VOLUME_INDEX])
 
 class Strategy:
-    def __init__(self, key: str, stock_data: dict, periods: int):
+    def __init__(self, key: str, inter: int, periods: int):
         self.periods = periods
+        self.min_interval = inter
         self.data = {}
-        i = 0
-        for datetime in stock_data:
-            self.data[datetime] = Stock(key, datetime, stock_data[datetime])
-            if (i > periods):
-                break
-            i += 1
+        self.name = key
 
     def action(self) -> int:
+        if self.isUptrending():
+            print("Stock is up-trending")
+        else:
+            print("Strock is down-trending")
+        if len(self.data.keys()) < self.periods:  # Do nothin until you reach min periods
+            return 0
         stoc_index = self.getStochasticIndex()
         print(stoc_index)
         if stoc_index["%K"] >= 80:
@@ -36,14 +38,16 @@ class Strategy:
             return 1
         return 0
 
+    def addData(self, stock_data: dict):
+        new_time = list(stock_data.keys())[0]
+        self.data[new_time] = Stock(self.name, new_time, stock_data[new_time])
+
+
     def getStochasticIndex(self) -> dict:
         #calculate start period and end period
         first_period = list(self.data.keys())[0]
-        fp_arr = first_period.split(" ")
-        fp_date = fp_arr[0].split("-")
-        fp_time = fp_arr[1].split(":")
-        now = datetime(int(fp_date[0]), int(fp_date[1]), int(fp_date[2]), int(fp_time[0]), int(fp_time[1]), int(fp_time[2]), 000000)
-        past = now - timedelta(minutes=5*self.periods)
+        now = self.getDatetimeFromStr(first_period)
+        past = now - timedelta(minutes=self.min_interval*self.periods)
         now_str = self.formatDate(now)
         past_str = self.formatDate(past)
         if not past_str in self.data:
@@ -56,6 +60,18 @@ class Strategy:
         perc_d = 50
 
         return {"%K": perc_k, "%D": perc_d}  
+
+    # date_str: "YYYY-MM-DD HH:MM:SS"
+    def getDatetimeFromStr(self, date_str: str) -> datetime:
+        date_arr = date_str.split(" ")
+        date = date_arr[0].split("-")
+        time = date_arr[1].split(":")
+        try:
+            now = datetime(int(date[0]), int(date[1]), int(date[2]), int(time[0]), int(time[1]), int(time[2]), 000000)
+        except IndexError:
+            raise Exception("date_str deve essere nel formato YYYY-MM-DD HH:MM:SS")
+
+        return now
 
     def formatDate(self, date) -> str:
         return date.strftime("%Y-%m-%d %H:%M:%S")
@@ -77,3 +93,7 @@ class Strategy:
 
     def calcKPercent(self, closing_price: float, high: float, low: float):
         return (closing_price - low) / (high - low) * 100
+
+    def isUptrending(self) -> bool:
+        keys = list(self.data.keys())
+        return ( self.data[keys[0]].open - self.data[keys[len(keys)-1]].close < 0 )
