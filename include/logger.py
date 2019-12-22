@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 class Logger:
     def __init__(self, path):
         today = datetime.today().strftime('%Y_%m_%d')
-        self.path = path + "/" + today + ".json"
+        self.path = path + "\\" + today + ".json"
         log_file = open(self.path, "w+")    #create file if not exist
         log_file.close()
 

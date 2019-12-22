@@ -1,12 +1,12 @@
 import sys 
 import os
 import json
-import requests
 import threading, time
 import alpaca_trade_api as tradeapi
 from datetime import datetime, timedelta
 from include.strategy import Stock, Strategy
 from include.logger import Logger
+from include.market import Market
 
 def getAlphaVantageKey() -> str:
     script_dir = os.path.dirname(__file__) #absolute dir the script is in
@@ -22,27 +22,6 @@ def getAlphaVantageKey() -> str:
 
     return alpha_key
 
-def alphaVantageRequest(params: dict) -> dict:
-    res = requests.get("https://www.alphavantage.co/query", params=params)
-    if res.status_code != 200:
-        raise Exception("errore", res.status_code)
-    return res.json()
-
-def getStockHistory(alpha_key: str, stock: str, interval: int) -> dict:
-    params = {"function": "TIME_SERIES_INTRADAY", "symbol": stock, "interval": str(interval)+"min", 
-        "apikey": alpha_key, "outputsize": "compact"}
-    return alphaVantageRequest(params)
-
-def getRealTimeQuotes(alpha_key: str, stock: str) -> dict:
-    params = {"function": "GLOBAL_QUOTE", "symbol": stock, "apikey": alpha_key}
-    return alphaVantageRequest(params)
-
-def getRealTimePrice(data: dict) -> float:
-    if "Global Quote" in data and "05. price" in data["Global Quote"]:
-        return float(data["Global Quote"]["05. price"])
-    else:
-        return -1
-
 def main():
     MIN_INTERVAL = 5
     MINIUM_PERIODS = 14
@@ -56,24 +35,25 @@ def main():
     if len(stocks) < 2:
         raise Exception("No stock passed")
     
+    alpha_key = getAlphaVantageKey()
+    wallStreet = Market(alpha_key)
     logger = Logger(os.path.dirname(__file__) + "\\Log")
     strategies = []
     for i in range(1, len(stocks)):
         strategies.append(Strategy(stocks[i], MIN_INTERVAL, MINIUM_PERIODS))
 
-    alpha_key = getAlphaVantageKey()
     ticker = threading.Event()
     while not ticker.wait(WAIT_TIME_SECONDS):
         for st in strategies:
             print(time.ctime())
             print("Stock:",st.name)
-            res_data = getStockHistory(alpha_key, st.name, MIN_INTERVAL)
+            res_data = wallStreet.getStockHistory(st.name, MIN_INTERVAL)
             if not data_key in res_data:
                 raise Exception("Errore recupero dati stock ("+st.name+")")
             st.addData(res_data[data_key])
             action = st.action()
-            real_time_data = getRealTimeQuotes(alpha_key, st.name)
-            price = getRealTimePrice(real_time_data)
+            real_time_data = wallStreet.getRealTimeQuotes(st.name)
+            price = wallStreet.getRealTimePrice(real_time_data)
             if price > 0:
                 if action < 0:
                     print("Overbought  market. SELL!")
