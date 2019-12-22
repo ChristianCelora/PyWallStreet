@@ -22,6 +22,7 @@ class Strategy:
         self.min_interval = inter
         self.data = {}
         self.name = key
+        self.invested = 0
 
     def action(self) -> int:
         if self.isUptrending():
@@ -97,3 +98,13 @@ class Strategy:
     def isUptrending(self) -> bool:
         keys = list(self.data.keys())
         return ( self.data[keys[0]].open - self.data[keys[len(keys)-1]].close < 0 )
+
+    def buyStock(self, price: float, budget: float) -> float:
+        qty_invested = budget / price
+        self.invested = qty_invested
+        return qty_invested
+
+    def sellStock(self, price: float) -> float:
+        return_gain = self.invested * price
+        self.invested = 0
+        return return_gain
