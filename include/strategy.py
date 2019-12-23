@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+# Simple stock
 class Stock:
     OPEN_INDEX = "1. open"
     HIGH_INDEX = "2. high"
@@ -16,13 +17,14 @@ class Stock:
         self.close = float(data[self.CLOSE_INDEX])
         self.volume = float(data[self.VOLUME_INDEX])
 
+# Investing strategy
 class Strategy:
     def __init__(self, key: str, inter: int, periods: int):
         self.periods = periods
         self.min_interval = inter
         self.data = {}
         self.name = key
-        self.invested = 0
+        #self.invested = 0
 
     def action(self) -> int:
         if self.isUptrending():
@@ -99,7 +101,7 @@ class Strategy:
         keys = list(self.data.keys())
         return ( self.data[keys[0]].open - self.data[keys[len(keys)-1]].close < 0 )
 
-    def buyStock(self, price: float, budget: float) -> float:
+    """def buyStock(self, price: float, budget: float) -> float:
         qty_invested = budget / price
         self.invested = qty_invested
         return qty_invested
@@ -107,4 +109,4 @@ class Strategy:
     def sellStock(self, price: float) -> float:
         return_gain = self.invested * price
         self.invested = 0
-        return return_gain
+        return return_gain"""

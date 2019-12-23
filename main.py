@@ -6,7 +6,7 @@ import alpaca_trade_api as tradeapi
 from datetime import datetime, timedelta
 from include.strategy import Stock, Strategy
 from include.logger import Logger
-from include.market import Market
+from include.market import Market, Wallet
 
 def getAlphaVantageKey() -> str:
     script_dir = os.path.dirname(__file__) #absolute dir the script is in
@@ -29,15 +29,15 @@ def main():
     WAIT_TIME_SECONDS = 4 #test
     STARTING_BUDGET = 1000
     data_key = "Time Series ("+str(MIN_INTERVAL)+"min)"
-    budget = STARTING_BUDGET
     stocks = sys.argv
-    stocks = ["file", "SPRT"]
+    stocks = ["", "SPRT"]   #mock
     if len(stocks) < 2:
         raise Exception("No stock passed")
     
     alpha_key = getAlphaVantageKey()
-    wallStreet = Market(alpha_key)
     logger = Logger(os.path.dirname(__file__) + "\\Log")
+    mywallet = Wallet(STARTING_BUDGET, logger)
+    wallStreet = Market(alpha_key, mywallet)
     strategies = []
     for i in range(1, len(stocks)):
         strategies.append(Strategy(stocks[i], MIN_INTERVAL, MINIUM_PERIODS))
@@ -52,28 +52,19 @@ def main():
                 raise Exception("Errore recupero dati stock ("+st.name+")")
             st.addData(res_data[data_key])
             action = st.action()
-            real_time_data = wallStreet.getRealTimeQuotes(st.name)
-            price = wallStreet.getRealTimePrice(real_time_data)
-            if price > 0:
-                if action < 0:
-                    print("Overbought  market. SELL!")
-                    if st.invested > 0:
-                        qty_bought = st.invested
-                        gains = st.sellStock(price)
-                        budget += gains
-                        logger.log_action(st.name, "SELL", qty_bought, price, budget)
-                        print("Sold:",qty_bought,"qty. Gained:",gains,"EUR. New balance", budget)
-                elif action > 0:
-                    print("Oversold market. BUY!")
-                    if st.invested != 0:
-                        qty_bought = st.buyStock(price, budget/5)
-                        budget -= qty_bought * price
-                        logger.log_action(st.name, "BUY", qty_bought, price, budget)
-                        print("Bought:",qty_bought,"qty")
-                else:
-                    print("Wait")
+            invested = mywallet.getStock(st.name)
+            if action < 0:
+                print("Overbought  market. SELL!")
+                if invested > 0:
+                    gains = wallStreet.sellStock(st.name)
+                    print("Sold:",invested,"qty. Gained:",gains,"EUR. New balance", mywallet.getBudget())
+            elif action > 0:
+                print("Oversold market. BUY!")
+                if invested != 0:
+                    qty_bought = wallStreet.buyStock(st.name, round(mywallet.getBudget()/5, 2) )
+                    print("Bought:",qty_bought,"qty")
             else:
-                print("real time price not available for", st.name)
+                print("Wait")
         
     sys.exit(1)
 
