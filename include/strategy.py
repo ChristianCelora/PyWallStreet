@@ -27,36 +27,31 @@ class Strategy:
         #self.invested = 0
 
     def action(self) -> int:
-        if self.isUptrending():
+        """if self.isUptrending():
             print("Stock is up-trending")
         else:
-            print("Strock is down-trending")
-        if len(self.data.keys()) < self.periods:  # Do nothin until you reach min periods
-            return 0
-        stoc_index = self.getStochasticIndex()
-        print(stoc_index)
-        if stoc_index["%K"] >= 80:
-            return -1
-        elif stoc_index["%K"] <= 20:
-            return 1
+            print("Stock is down-trending")"""
+        if len(self.data.keys()) > self.periods:  # Do nothin until you reach min periods 
+            stoc_index = self.getStochasticIndex()
+            if stoc_index["%K"] >= 80:
+                return -1
+            elif stoc_index["%K"] <= 20:
+                return 1
         return 0
 
-    def addData(self, stock_data: dict):
-        new_time = list(stock_data.keys())[0]
-        self.data[new_time] = Stock(self.name, new_time, stock_data[new_time])
-
+    def addData(self, time: str, stock_data: dict):
+        self.data[time] = Stock(self.name, time, stock_data)
 
     def getStochasticIndex(self) -> dict:
         #calculate start period and end period
-        first_period = list(self.data.keys())[0]
-        now = self.getDatetimeFromStr(first_period)
+        last_period = list(reversed(list(self.data.keys())))[0]
+        now = self.getDatetimeFromStr(last_period)
         past = now - timedelta(minutes=self.min_interval*self.periods)
         now_str = self.formatDate(now)
         past_str = self.formatDate(past)
         if not past_str in self.data:
             raise Exception(past_str," not in stock data")
         limits = self.getLowHigh(now, past)
-        print(limits)
         #calculate stock %K
         perc_k = self.calcKPercent(float(self.data[now_str].close), float(limits["low"]), float(limits["high"]))
         #calculate stock %D
@@ -101,12 +96,3 @@ class Strategy:
         keys = list(self.data.keys())
         return ( self.data[keys[0]].open - self.data[keys[len(keys)-1]].close < 0 )
 
-    """def buyStock(self, price: float, budget: float) -> float:
-        qty_invested = budget / price
-        self.invested = qty_invested
-        return qty_invested
-
-    def sellStock(self, price: float) -> float:
-        return_gain = self.invested * price
-        self.invested = 0
-        return return_gain"""

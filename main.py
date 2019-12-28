@@ -24,7 +24,7 @@ def getAlphaVantageKey() -> str:
 
 def main():
     MIN_INTERVAL = 5
-    MINIUM_PERIODS = 14
+    MINIUM_PERIODS = 10
     #WAIT_TIME_SECONDS = 60
     WAIT_TIME_SECONDS = 4 #test
     STARTING_BUDGET = 1000
@@ -50,7 +50,8 @@ def main():
             res_data = wallStreet.getStockHistory(st.name, MIN_INTERVAL)
             if not data_key in res_data:
                 raise Exception("Errore recupero dati stock ("+st.name+")")
-            st.addData(res_data[data_key])
+            recent_timestamp = list(res_data[data_key].keys())[0]
+            st.addData(recent_timestamp, res_data[data_key][recent_timestamp])
             action = st.action()
             invested = mywallet.getStock(st.name)
             if action < 0:

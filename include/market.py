@@ -1,4 +1,5 @@
 import requests
+import math
 from .logger import Logger
 
 # manage budget and stocks holdings (logs every transaction)
@@ -11,26 +12,32 @@ class Wallet:
     def __updateWallet(self, stock: str, qty: float, price: float):
         if not stock in self.__stocks:
             self.__stocks[stock] = 0
-        self.__stocks[stock] += qty
+        self.__stocks[stock] = self.__floorTwoDec(self.__stocks[stock] + qty)
+
+    def __floorTwoDec(self, val: float) -> float:
+        return round(math.floor(val * 100) / 100.0, 2)
     
     def __updateBudget(self, val: float):
-        self.__budget += val
+        self.__budget = self.__floorTwoDec(self.__budget + val)
+        print("new budget:", self.__budget)
 
     def buyStock(self, stock: str, qty: float, price: float):
         self.__updateWallet(stock, qty, price)
         self.__updateBudget(qty * price * -1)
-        self.__logger.log_action(stock, "BUY", qty, price, self.__budget)
+        if not self.__logger is None:
+            self.__logger.log_action(stock, "BUY", qty, price, self.__budget)
 
     def sellStock(self, stock: str, qty: float, price: float):   
         self.__updateWallet(stock, qty*-1, price)
         self.__updateBudget(qty * price)
-        self.__logger.log_action(stock, "SELL", qty, price, self.__budget)
+        if not self.__logger is None:
+            self.__logger.log_action(stock, "SELL", qty, price, self.__budget)
 
     def getStock(self, stock: str) -> float:
         if not stock in self.__stocks:
             return 0
         else:
-            return self.__stocks[stock]
+            return float(self.__stocks[stock])
             
     def getBudget(self) -> float:
         return self.__budget
@@ -62,12 +69,15 @@ class Market:
             return float(data["Global Quote"]["05. price"])
         else:
             return -1
+
+    def __floorTwoDec(self, val: float) -> float:
+        return math.floor(val * 100) / 100.0
     
     def buyStock(self, stock: str, budget: float) -> float:
         price = self.getRealTimePrice(stock)
         if price < 0:
             return 0
-        qty_bought = budget / price
+        qty_bought = self.__floorTwoDec(budget / price)
         self.__wallet.buyStock(stock, qty_bought, price)
         return qty_bought
 
@@ -75,7 +85,7 @@ class Market:
         if qty == -1:   # if -1 sell all qty
             qty = self.__wallet.getStock(stock)
         price = self.getRealTimePrice(stock)
-        return_gain = qty * price
+        return_gain = self.__floorTwoDec(qty * price)
         self.__wallet.sellStock(stock, qty, price)
         return return_gain
         

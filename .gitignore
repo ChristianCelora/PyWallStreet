@@ -2,3 +2,4 @@ alpha_vantage_key.json
 include/__pycache__/*
 Log/*
 !Log/.gitkeep
+!Log/TestLog
