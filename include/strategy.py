@@ -27,24 +27,32 @@ class Strategy:
         #self.invested = 0
 
     def action(self) -> int:
-        """if self.isUptrending():
-            print("Stock is up-trending")
-        else:
-            print("Stock is down-trending")"""
         if len(self.data.keys()) > self.periods:  # Do nothin until you reach min periods 
             stoc_index = self.getStochasticIndex()
-            if stoc_index["%K"] >= 80:
+            mov_avg = self.getMovingAverage()
+            last_period = list(self.data.keys())[-1]
+            print("moving average =", mov_avg)
+            if stoc_index["%K"] >= 80 and mov_avg > self.data[last_period].close:
                 return -1
-            elif stoc_index["%K"] <= 20:
+            elif stoc_index["%K"] <= 20 and mov_avg < self.data[last_period].close:
                 return 1
         return 0
+
+    def getMovingAverage(self) -> float:
+        sma = 0
+        timestamps = list(self.data.keys())[-self.periods:]
+        for i in range(0, self.periods):
+            sma += self.data[timestamps[i]].close
+
+        return round(sma / self.periods, 2)
+
 
     def addData(self, time: str, stock_data: dict):
         self.data[time] = Stock(self.name, time, stock_data)
 
     def getStochasticIndex(self) -> dict:
         #calculate start period and end period
-        last_period = list(reversed(list(self.data.keys())))[0]
+        last_period = list(self.data.keys())[-1]
         now = self.getDatetimeFromStr(last_period)
         past = now - timedelta(minutes=self.min_interval*self.periods)
         now_str = self.formatDate(now)
@@ -92,7 +100,7 @@ class Strategy:
     def calcKPercent(self, closing_price: float, high: float, low: float):
         return (closing_price - low) / (high - low) * 100
 
-    def isUptrending(self) -> bool:
+    """def isUptrending(self) -> bool:
         keys = list(self.data.keys())
         return ( self.data[keys[0]].open - self.data[keys[len(keys)-1]].close < 0 )
-
+    """

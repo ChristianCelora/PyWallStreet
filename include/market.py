@@ -19,7 +19,6 @@ class Wallet:
     
     def __updateBudget(self, val: float):
         self.__budget = self.__floorTwoDec(self.__budget + val)
-        print("new budget:", self.__budget)
 
     def buyStock(self, stock: str, qty: float, price: float):
         self.__updateWallet(stock, qty, price)

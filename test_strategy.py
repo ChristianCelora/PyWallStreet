@@ -49,6 +49,8 @@ def main():
             continue
         daily_data[timestamp] = data[data_key][timestamp]
     # try strategy
+    n_buy = 0
+    n_sell = 0
     for timestamp in reversed(list(daily_data.keys())):
         for st in strategies:
             st.addData(timestamp, daily_data[timestamp])
@@ -59,19 +61,21 @@ def main():
                 print(timestamp, "Overbought  market. SELL!")
                 if invested > 0:
                     mywallet.sellStock(st.name, mywallet.getStock(st.name), price)
+                    n_sell += 1
 
             elif action > 0:
                 print(timestamp, "Oversold market. BUY!")
                 if invested == 0:
                     budget = math.floor(mywallet.getBudget()/5 * 100) / 100.0
                     mywallet.buyStock(st.name, budget/price, price)
+                    n_buy += 1
 
     #sell everithing left
     for st in strategies:
         mywallet.getStock(st.name)
         wallStreet.sellStock(st.name)
-
-    print ("End of the day:", mywallet.getBudget())
+    print("Transactions:", n_buy + n_sell, "BUY:", n_buy, "SELL:", n_sell)
+    print("End of the day:", mywallet.getBudget())
 
 
 if __name__ == "__main__":
