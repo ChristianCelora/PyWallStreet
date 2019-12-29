@@ -25,12 +25,10 @@ def getAlphaVantageKey() -> str:
 def main():
     MIN_INTERVAL = 5
     MINIUM_PERIODS = 10
-    #WAIT_TIME_SECONDS = 60
-    WAIT_TIME_SECONDS = 4 #test
+    WAIT_TIME_SECONDS = 60
     STARTING_BUDGET = 1000
     data_key = "Time Series ("+str(MIN_INTERVAL)+"min)"
     stocks = sys.argv
-    stocks = ["", "SPRT"]   #mock
     if len(stocks) < 2:
         raise Exception("No stock passed")
     
