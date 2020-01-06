@@ -31,7 +31,6 @@ class Strategy:
             stoc_index = self.getStochasticIndex()
             mov_avg = self.getMovingAverage()
             last_period = list(self.data.keys())[-1]
-            print("moving average =", mov_avg)
             if stoc_index["%K"] >= 80 and mov_avg > self.data[last_period].close:
                 return -1
             elif stoc_index["%K"] <= 20 and mov_avg < self.data[last_period].close:
@@ -48,7 +47,10 @@ class Strategy:
 
 
     def addData(self, time: str, stock_data: dict):
-        self.data[time] = Stock(self.name, time, stock_data)
+        if time not in self.data:
+            self.data[time] = Stock(self.name, time, stock_data)
+            return True
+        return False
 
     def getStochasticIndex(self) -> dict:
         #calculate start period and end period

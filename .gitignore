@@ -1,4 +1,5 @@
 alpha_vantage_key.json
+alpaca_api_key.json
 include/__pycache__/*
 Log/*
 !Log/.gitkeep

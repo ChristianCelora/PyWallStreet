@@ -1,13 +1,29 @@
 import requests
 import math
+import alpaca_trade_api as alpaca
 from .logger import Logger
+
 
 # manage budget and stocks holdings (logs every transaction)
 class Wallet:
-    def __init__(self, starting_budget: float, log_obj: Logger):
-        self.__budget = starting_budget
+    def __init__(self, al_key:str, al_secret:str, log_obj: Logger):
         self.__stocks = {}
         self.__logger = log_obj
+        self.__alpaca_key = {}
+        self.__alpaca_key["key"] = al_key
+        self.__alpaca_key["secret"] = al_secret
+        self.__budget = self.__getAlpacaAccountBudget()
+
+    def __alpacaRequest(self, url: str, header: dict, params: dict) -> dict:
+        res = requests.get("https://paper-api.alpaca.markets/"+url, params=params, headers=header)
+        if res.status_code != 200:
+            raise Exception("errore", res.status_code)
+        return res.json()
+
+    def __getAlpacaAccountBudget(self) -> float:
+        head = {"APCA-API-KEY-ID": self.__alpaca_key["key"], "APCA-API-SECRET-KEY": self.__alpaca_key["secret"]}
+        account = self.__alpacaRequest("v2/account", head, None)
+        return float(account["cash"])
 
     def __updateWallet(self, stock: str, qty: float, price: float):
         if not stock in self.__stocks:
@@ -56,7 +72,7 @@ class Market:
     def getStockHistory(self, stock: str, interval: int) -> dict:
         params = {"function": "TIME_SERIES_INTRADAY", "symbol": stock, "interval": str(interval)+"min", 
             "apikey": self.__alpha_key, "outputsize": "compact"}
-        return self.__alphaVantageRequest(params)
+        return self.__alphaVantageRequest(params)   # API times are in GTM-5 tiemzone
 
     def getRealTimeQuotes(self, stock: str) -> dict:
         params = {"function": "GLOBAL_QUOTE", "symbol": stock, "apikey": self.__alpha_key}
@@ -87,6 +103,7 @@ class Market:
         return_gain = self.__floorTwoDec(qty * price)
         self.__wallet.sellStock(stock, qty, price)
         return return_gain
+    
         
     
     
