@@ -54,7 +54,7 @@ def main():
     mywallet = Wallet(alpaca_key["key"], alpaca_key["secret_key"], None)
     wallStreet = Market(alpha_key, mywallet)
 
-    stock = "LW"
+    stock = "GOOG"
     data = wallStreet.getStockHistory(stock, MIN_INTERVAL)
     strategies = [Strategy(stock, MIN_INTERVAL, MINIUM_PERIODS)]
     test_day = getDay( (list(data[data_key].keys()))[0] )
@@ -87,7 +87,7 @@ def main():
                 if invested == 0:
                     print("BUY!")
                     budget = math.floor(mywallet.getBudget()/len(strategies) * 100) / 100.0
-                    mywallet.buyStock(st.name, budget/price, price)
+                    mywallet.buyStock(st.name, math.floor(budget/price), price)
                     n_buy += 1
 
     #sell everithing left

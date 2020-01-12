@@ -7,53 +7,74 @@ from .logger import Logger
 # manage budget and stocks holdings (logs every transaction)
 class Wallet:
     def __init__(self, al_key:str, al_secret:str, log_obj: Logger):
-        self.__stocks = {}
+        #self.__stocks = {}
         self.__logger = log_obj
         self.__alpaca_key = {}
         self.__alpaca_key["key"] = al_key
         self.__alpaca_key["secret"] = al_secret
         self.__budget = self.__getAlpacaAccountBudget()
 
-    def __alpacaRequest(self, url: str, header: dict, params: dict) -> dict:
-        res = requests.get("https://paper-api.alpaca.markets/"+url, params=params, headers=header)
+    def __alpacaRequest(self, method: str, url: str, header: dict, data: dict) -> dict:
+        alpaca_api_url = "https://paper-api.alpaca.markets/"
+        if method == "GET":
+            res = requests.get(alpaca_api_url + url, headers=header)
+        elif method == "POST":
+            res = requests.post(alpaca_api_url + url, headers=header, json=data)
+        else:
+            raise Exception("invaid method", method)
+
         if res.status_code != 200:
-            raise Exception("errore", res.status_code)
+            raise Exception("errore", res.status_code, "content", res.content)
         return res.json()
 
     def __getAlpacaAccountBudget(self) -> float:
-        head = {"APCA-API-KEY-ID": self.__alpaca_key["key"], "APCA-API-SECRET-KEY": self.__alpaca_key["secret"]}
-        account = self.__alpacaRequest("v2/account", head, None)
+        head = {"APCA-API-KEY-ID": self.__alpaca_key["key"], "APCA-API-SECRET-KEY": self.__alpaca_key["secret"],
+            "Content-Type": "application/json"}
+        account = self.__alpacaRequest("GET", "v2/account", head, None)
         return float(account["cash"])
 
-    def __updateWallet(self, stock: str, qty: float, price: float):
+    def __newOrder(self, stock: str, qty: float, buy_flag: bool) -> float:
+        head = {"APCA-API-KEY-ID": self.__alpaca_key["key"],"APCA-API-SECRET-KEY": self.__alpaca_key["secret"],
+            "Content-Type": "application/json"}
+        if buy_flag: 
+            side = "buy"
+        else:
+            side = "sell"
+        data = {"symbol":stock, "qty":qty, "side":side, "type":"market", "time_in_force":"day"}
+        order = self.__alpacaRequest("POST", "v2/orders", head, data)
+        return order["id"]
+
+    """def __updateWallet(self, stock: str, qty: float, price: float):
         if not stock in self.__stocks:
             self.__stocks[stock] = 0
-        self.__stocks[stock] = self.__floorTwoDec(self.__stocks[stock] + qty)
+        self.__stocks[stock] = self.__floorTwoDec(self.__stocks[stock] + qty)"""
 
     def __floorTwoDec(self, val: float) -> float:
         return round(math.floor(val * 100) / 100.0, 2)
     
-    def __updateBudget(self, val: float):
-        self.__budget = self.__floorTwoDec(self.__budget + val)
+    def __updateBudget(self):
+        self.__budget = self.__getAlpacaAccountBudget()
 
     def buyStock(self, stock: str, qty: float, price: float):
-        self.__updateWallet(stock, qty, price)
-        self.__updateBudget(qty * price * -1)
+        self.__updateBudget()
+        self.__newOrder(stock, qty, True)
         if not self.__logger is None:
             self.__logger.log_action(stock, "BUY", qty, price, self.__budget)
 
     def sellStock(self, stock: str, qty: float, price: float):   
-        self.__updateWallet(stock, qty*-1, price)
-        self.__updateBudget(qty * price)
+        self.__updateBudget()
+        self.__newOrder(stock, qty, False)
         if not self.__logger is None:
             self.__logger.log_action(stock, "SELL", qty, price, self.__budget)
 
     def getStock(self, stock: str) -> float:
-        if not stock in self.__stocks:
+        head = {"APCA-API-KEY-ID": self.__alpaca_key["key"],"APCA-API-SECRET-KEY": self.__alpaca_key["secret"]}
+        try:
+            position = self.__alpacaRequest("GET", "v2/positions/"+stock, head, None)
+            return position["qty"]
+        except:
             return 0
-        else:
-            return float(self.__stocks[stock])
-            
+
     def getBudget(self) -> float:
         return self.__budget
 

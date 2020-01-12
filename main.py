@@ -1,5 +1,6 @@
 import sys 
 import os
+import math
 import json
 import threading, time
 import alpaca_trade_api as tradeapi
@@ -43,7 +44,6 @@ def main():
     MINIUM_PERIODS = 10
     #WAIT_TIME_SECONDS = 60
     WAIT_TIME_SECONDS = 4 # test
-    STARTING_BUDGET = 1000
     data_key = "Time Series ("+str(MIN_INTERVAL)+"min)"
     stocks = sys.argv
     if len(stocks) < 2:
@@ -52,7 +52,7 @@ def main():
     alpha_key = getAlphaVantageKey()
     alpaca_key = getAlpacaKey()
     logger = Logger(os.path.dirname(__file__) + "\\Log")
-    mywallet = Wallet(STARTING_BUDGET, alpaca_key["key"], alpaca_key["secret_key"], logger)
+    mywallet = Wallet(alpaca_key["key"], alpaca_key["secret_key"], logger)
     wallStreet = Market(alpha_key, mywallet)
     strategies = []
     for i in range(1, len(stocks)):
@@ -79,7 +79,7 @@ def main():
                 elif action > 0:
                     print("Oversold market.")
                     if invested != 0:
-                        qty_bought = wallStreet.buyStock(st.name, round(mywallet.getBudget()/len(strategies), 2) )
+                        qty_bought = wallStreet.buyStock(st.name, math.floor(mywallet.getBudget()/len(strategies)) )
                         print("Bought:",qty_bought,"qty")
                 else:
                     print("Wait")

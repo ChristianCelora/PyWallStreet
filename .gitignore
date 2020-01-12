@@ -4,3 +4,4 @@ include/__pycache__/*
 Log/*
 !Log/.gitkeep
 !Log/TestLog
+tradingBotLogic.png 
