@@ -69,12 +69,11 @@ def main():
                 st.addData(timestamp, data[st.name][0])
                 action = st.action()
                 invested = mywallet.getStock(st.name)
-                price = float(data[st.name][0]["o"])
                 if action < 0:
                     print(timestamp, "Overbought market.")
                     if invested > 0:
                         print("SELL!")
-                        mywallet.sellStock(st.name, mywallet.getStock(st.name), price)
+                        wallStreet.sellStock(st.name, mywallet.getStock(st.name))
                         n_sell += 1
 
                 elif action > 0:
@@ -82,7 +81,7 @@ def main():
                     if invested == 0:
                         print("BUY!")
                         budget = math.floor(mywallet.getBudget()/len(strategies) * 100) / 100.0
-                        mywallet.buyStock(st.name, math.floor(budget/price), price)
+                        wallStreet.buyStock(st.name, budget)
                         n_buy += 1
         current_time = current_time + timedelta(minutes=5)
     #sell everithing left

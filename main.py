@@ -3,7 +3,6 @@ import os
 import math
 import json
 import threading, time
-import alpaca_trade_api as tradeapi
 from datetime import datetime, timedelta
 from include.strategy import Stock, Strategy
 from include.logger import Logger
