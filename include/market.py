@@ -1,7 +1,9 @@
 import requests
 import math
 import alpaca_trade_api as alpaca
+from datetime import datetime
 from .logger import Logger
+from .strategy import Stock
 
 
 # manage budget and stocks holdings (logs every transaction)
@@ -80,11 +82,14 @@ class Wallet:
 
 # manage API calls with the stock market
 class Market:
-    def __init__(self, alpha_key: str, wallet: Wallet):
-        self.__alpha_key = alpha_key
+    def __init__(self, al_key:str, al_secret:str, wallet: Wallet):
+        #self.__alpha_key = alpha_key
+        self.__alpaca_key = {}
+        self.__alpaca_key["key"] = al_key
+        self.__alpaca_key["secret"] = al_secret
         self.__wallet = wallet
 
-    def __alphaVantageRequest(self, params: dict) -> dict:
+    """def __alphaVantageRequest(self, params: dict) -> dict:
         res = requests.get("https://www.alphavantage.co/query", params=params)
         if res.status_code != 200:
             raise Exception("errore", res.status_code)
@@ -104,7 +109,38 @@ class Market:
         if "Global Quote" in data and "05. price" in data["Global Quote"]:
             return float(data["Global Quote"]["05. price"])
         else:
-            return -1
+            return -1"""
+    def __alpacaRequest(self, method: str, url: str, header: dict, data: dict) -> dict:
+        alpaca_api_url = "https://data.alpaca.markets/"
+        if method == "GET":
+            if data is None:
+                res = requests.get(alpaca_api_url + url, headers=header)
+            else:
+                res = requests.get(alpaca_api_url + url, headers=header, params=data)
+        elif method == "POST":
+            res = requests.post(alpaca_api_url + url, headers=header, json=data)
+        else:
+            raise Exception("invaid method", method)
+
+        if res.status_code != 200:
+            raise Exception("errore", res.status_code, "content", res.content)
+        return res.json()
+    
+    def getStockData(self, stock: str, timestamp: str) -> dict:
+        head = {"APCA-API-KEY-ID": self.__alpaca_key["key"],"APCA-API-SECRET-KEY": self.__alpaca_key["secret"],
+            "Content-Type": "application/json"}
+        params = {"symbols": stock, "limit": 1, "start": timestamp}
+        return self.__alpacaRequest("GET", "v1/bars/5Min", head, params)
+
+    def getRealTimePrice(self, stock: str) -> float:
+        head = {"APCA-API-KEY-ID": self.__alpaca_key["key"],"APCA-API-SECRET-KEY": self.__alpaca_key["secret"],
+            "Content-Type": "application/json"}
+        params = {"symbols": stock, "limit": 1}
+        data = self.__alpacaRequest("GET", "v1/bars/5Min", head, params)
+        if not stock in data:
+            return 0
+        stock = Stock(stock, 0, data[stock])
+        return stock.close
 
     def __floorTwoDec(self, val: float) -> float:
         return math.floor(val * 100) / 100.0

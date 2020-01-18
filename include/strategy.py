@@ -2,11 +2,20 @@ from datetime import datetime, timedelta
 
 # Simple stock
 class Stock:
+    #alpha vantage indexes
+    """
     OPEN_INDEX = "1. open"
     HIGH_INDEX = "2. high"
     LOW_INDEX = "3. low"
     CLOSE_INDEX = "4. close"
     VOLUME_INDEX = "5. volume"
+    """
+    #alpaca trading indexes
+    OPEN_INDEX = "o"
+    HIGH_INDEX = "h"
+    LOW_INDEX = "l"
+    CLOSE_INDEX = "c"
+    VOLUME_INDEX = "v"
 
     def __init__(self, key: str, time: str, data: dict):
         self.name = key

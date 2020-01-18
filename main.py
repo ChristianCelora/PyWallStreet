@@ -53,7 +53,7 @@ def main():
     alpaca_key = getAlpacaKey()
     logger = Logger(os.path.dirname(__file__) + "\\Log")
     mywallet = Wallet(alpaca_key["key"], alpaca_key["secret_key"], logger)
-    wallStreet = Market(alpha_key, mywallet)
+    wallStreet = Market(alpaca_key["key"], alpaca_key["secret_key"], mywallet)
     strategies = []
     for i in range(1, len(stocks)):
         strategies.append(Strategy(stocks[i], MIN_INTERVAL, MINIUM_PERIODS))
@@ -63,7 +63,7 @@ def main():
         for st in strategies:
             print(time.ctime())
             print("Stock:",st.name)
-            res_data = wallStreet.getStockHistory(st.name, MIN_INTERVAL)
+            res_data = wallStreet.getStockData(st.name, MIN_INTERVAL)
             if not data_key in res_data:
                 raise Exception("Errore recupero dati stock ("+st.name+")")
             recent_timestamp = list(res_data[data_key].keys())[0]

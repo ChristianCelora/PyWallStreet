@@ -49,47 +49,42 @@ def main():
     alpaca_key = getAlpacaKey()
     MIN_INTERVAL = 5
     MINIUM_PERIODS = 10
-    data_key = "Time Series ("+str(MIN_INTERVAL)+"min)"
     
     mywallet = Wallet(alpaca_key["key"], alpaca_key["secret_key"], None)
-    wallStreet = Market(alpha_key, mywallet)
-
-    stock = "GOOG"
-    data = wallStreet.getStockHistory(stock, MIN_INTERVAL)
+    wallStreet = Market(alpaca_key["key"], alpaca_key["secret_key"], mywallet)
+    stock = "GOOGL"
     strategies = [Strategy(stock, MIN_INTERVAL, MINIUM_PERIODS)]
-    test_day = getDay( (list(data[data_key].keys()))[0] )
-    print("Day:", test_day)
-    print("Starting:", mywallet.getBudget())
-    # get only daily data
-    daily_data = {}
-    for timestamp in data[data_key]:
-        if getDay(timestamp) != test_day: # Test only on one day
-            continue
-        daily_data[timestamp] = data[data_key][timestamp]
     # try strategy
     n_buy = 0
     n_sell = 0
-    for timestamp in reversed(list(daily_data.keys())):
+    current_time = datetime.now()
+    market_end = datetime(current_time.year, current_time.month, current_time.day, 18, 00, 00) # mock
+    while current_time < market_end:
+        timestamp = current_time.strftime("%Y-%m-%d %H:%M:%S")
+        print(timestamp)
         for st in strategies:
-            st.addData(timestamp, daily_data[timestamp])
-            action = st.action()
-            invested = mywallet.getStock(st.name)
-            price = float(daily_data[timestamp]["1. open"])
-            if action < 0:
-                print(timestamp, "Overbought market.")
-                if invested > 0:
-                    print("SELL!")
-                    mywallet.sellStock(st.name, mywallet.getStock(st.name), price)
-                    n_sell += 1
+            data = wallStreet.getStockData(st.name, current_time.isoformat()) # retrive stock data
+            if st.name in data:
+                print(data[st.name])
+                st.addData(timestamp, data[st.name][0])
+                action = st.action()
+                invested = mywallet.getStock(st.name)
+                price = float(data[st.name][0]["o"])
+                if action < 0:
+                    print(timestamp, "Overbought market.")
+                    if invested > 0:
+                        print("SELL!")
+                        mywallet.sellStock(st.name, mywallet.getStock(st.name), price)
+                        n_sell += 1
 
-            elif action > 0:
-                print(timestamp, "Oversold market.")
-                if invested == 0:
-                    print("BUY!")
-                    budget = math.floor(mywallet.getBudget()/len(strategies) * 100) / 100.0
-                    mywallet.buyStock(st.name, math.floor(budget/price), price)
-                    n_buy += 1
-
+                elif action > 0:
+                    print(timestamp, "Oversold market.")
+                    if invested == 0:
+                        print("BUY!")
+                        budget = math.floor(mywallet.getBudget()/len(strategies) * 100) / 100.0
+                        mywallet.buyStock(st.name, math.floor(budget/price), price)
+                        n_buy += 1
+        current_time = current_time + timedelta(minutes=5)
     #sell everithing left
     for st in strategies:
         mywallet.getStock(st.name)
