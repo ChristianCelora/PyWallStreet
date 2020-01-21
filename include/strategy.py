@@ -82,10 +82,10 @@ class Strategy:
 
         return now
 
-    def formatDate(self, date) -> str:
+    def formatDate(self, date: datetime) -> str:
         return date.strftime("%Y-%m-%d %H:%M:%S")
 
-    def getLowHigh(self, now, past) -> dict:
+    def getLowHigh(self, now: datetime, past: datetime) -> dict:
         low = self.data[self.formatDate(past)].low
         high = self.data[self.formatDate(past)].high
 
@@ -100,7 +100,7 @@ class Strategy:
 
         return {"low": low, "high": high}
 
-    def calcKPercent(self, closing_price: float, high: float, low: float):
+    def calcKPercent(self, closing_price: float, high: float, low: float) -> float:
         return (closing_price - low) / (high - low) * 100
 
     """def isUptrending(self) -> bool:

@@ -12,7 +12,7 @@ def getAlphaVantageKey() -> str:
     script_dir = os.path.dirname(__file__) #absolute dir the script is in
     json_data = ""
     #read file
-    with open(script_dir+"\\alpha_vantage_key.json", "r") as f:
+    with open( os.path.join(script_dir, "alpaca_api_key.json"), "r") as f:
         json_data = json.load(f)
     #get JSON data
     if not "key" in json_data:
@@ -27,7 +27,7 @@ def getAlpacaKey() -> dict:
     json_data = ""
     alpaca_key = {}
     #read file
-    with open(script_dir+"\\alpaca_api_key.json", "r") as f:
+    with open( os.path.join(script_dir, "alpaca_api_key.json"), "r") as f:
         json_data = json.load(f)
     #get JSON data
     if (not "key" in json_data) or (not "secret_key" in json_data):
@@ -38,10 +38,20 @@ def getAlpacaKey() -> dict:
 
     return alpaca_key
 
+"""
+def formatDate(date: datetime) -> datetime: # arrotondo ai 5 min precedenti
+    if str(date.min)[1] < 5:
+        minute = str(date.min)[0]."0"
+    else:
+        minute = str(date.min)[0]."5"
+    format_date = datetime(date.year, date.month, date.day, date.hour, int(minute), 00)
+    return format_date
+"""
+
 def main():
     MIN_INTERVAL = 5
     MINIUM_PERIODS = 10
-    #WAIT_TIME_SECONDS = 60
+    #WAIT_TIME_SECONDS = MIN_INTERVAL * 60
     WAIT_TIME_SECONDS = 4 # test
     data_key = "Time Series ("+str(MIN_INTERVAL)+"min)"
     stocks = sys.argv
@@ -50,39 +60,45 @@ def main():
     
     alpha_key = getAlphaVantageKey()
     alpaca_key = getAlpacaKey()
-    logger = Logger(os.path.dirname(__file__) + "\\Log")
+    logger = Logger( os.path.join(os.path.dirname(__file__), "Log") )
     mywallet = Wallet(alpaca_key["key"], alpaca_key["secret_key"], logger)
     wallStreet = Market(alpaca_key["key"], alpaca_key["secret_key"], mywallet)
+    print("market open?:", wallStreet.isMarketOpen())
+    exit(0)
     strategies = []
     for i in range(1, len(stocks)):
         strategies.append(Strategy(stocks[i], MIN_INTERVAL, MINIUM_PERIODS))
 
     ticker = threading.Event()
+    current_time = datetime.now()
     while not ticker.wait(WAIT_TIME_SECONDS):
+        timestamp = current_time.strftime("%Y-%m-%d %H:%M:%S")
+        print(timestamp)
         for st in strategies:
-            print(time.ctime())
             print("Stock:",st.name)
-            res_data = wallStreet.getStockData(st.name, MIN_INTERVAL)
-            if not data_key in res_data:
-                raise Exception("Errore recupero dati stock ("+st.name+")")
-            recent_timestamp = list(res_data[data_key].keys())[0]
-            isAdded = st.addData(recent_timestamp, res_data[data_key][recent_timestamp])
-            if isAdded: # check if we have new data
-                action = st.action()
-                invested = mywallet.getStock(st.name)
-                if action < 0:
-                    print("Overbought market.")
-                    if invested > 0:
-                        gains = wallStreet.sellStock(st.name)
-                        print("Sold:",invested,"qty. Gained:",gains,"EUR. New balance", mywallet.getBudget())
-                elif action > 0:
-                    print("Oversold market.")
-                    if invested != 0:
-                        qty_bought = wallStreet.buyStock(st.name, math.floor(mywallet.getBudget()/len(strategies)) )
-                        print("Bought:",qty_bought,"qty")
+            stock_data = wallStreet.getStockData(st.name, MIN_INTERVAL)
+            if not st.name in stock_data:
+                raise Exception("Errore recupero dati stock ("+st.name+")")   
+            if len(stock_data[st.name]) > 0:
+                isAdded = st.addData(timestamp, stock_data[st.name][0])
+                if isAdded: # check if we have new data
+                    action = st.action()
+                    invested = mywallet.getStock(st.name)
+                    if action < 0:
+                        print("Overbought market.")
+                        if invested > 0:
+                            gains = wallStreet.sellStock(st.name)
+                            print("Sold:",invested,"qty. Gained:",gains,"EUR. New balance", mywallet.getBudget())
+                    elif action > 0:
+                        print("Oversold market.")
+                        if invested != 0:
+                            qty_bought = wallStreet.buyStock(st.name, math.floor(mywallet.getBudget()/len(strategies)) )
+                            print("Bought:",qty_bought,"qty")
+                    else:
+                        print("Wait")
                 else:
-                    print("Wait")
-        
+                    print("Errore aggiunta dati stock", st.name, )
+        current_time = current_time + timedelta(minutes=MIN_INTERVAL)
     sys.exit(1)
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import requests
 import math
-from datetime import datetime
+#from datetime import datetime
 from .logger import Logger
 from .strategy import Stock
 
@@ -77,6 +77,13 @@ class Market:
         self.__wallet.sellStock(stock, qty, price)
         return return_gain
 
+    def isMarketOpen(self) -> bool:
+        market_time = self.__alpacaapi.getMarketTimes()
+        print(market_time)
+        if "is_open" in market_time:
+            return market_time["is_open"]
+        return False
+
 class AlpacaAPI:
     ALPACA_PAPER_URL = "https://paper-api.alpaca.markets/"
     ALPACA_DATA_URL = "https://data.alpaca.markets/"
@@ -116,6 +123,10 @@ class AlpacaAPI:
         params = {"symbols": stock, "limit": 1}
         return self.__alpacaRequest("GET", self.ALPACA_DATA_URL+"v1/bars/5Min", head, params)
         
+    def getMarketTimes(self) -> dict:
+        head = self.__getHeader()
+        return self.__alpacaRequest("GET", self.ALPACA_PAPER_URL+"v2/clock", head, None)
+
     def __getHeader(self) -> dict:
         return {"APCA-API-KEY-ID": self.__alpaca_key["key"],"APCA-API-SECRET-KEY": self.__alpaca_key["secret"], 
             "Content-Type": "application/json"}
