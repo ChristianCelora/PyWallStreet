@@ -51,8 +51,8 @@ def formatDate(date: datetime) -> datetime: # arrotondo ai 5 min precedenti
 def main():
     MIN_INTERVAL = 5
     MINIUM_PERIODS = 10
-    #WAIT_TIME_SECONDS = MIN_INTERVAL * 60
-    WAIT_TIME_SECONDS = 4 # test
+    WAIT_TIME_SECONDS = MIN_INTERVAL * 60
+    #WAIT_TIME_SECONDS = 4 # test
     data_key = "Time Series ("+str(MIN_INTERVAL)+"min)"
     stocks = sys.argv
     if len(stocks) < 2:
@@ -63,15 +63,15 @@ def main():
     logger = Logger( os.path.join(os.path.dirname(__file__), "Log") )
     mywallet = Wallet(alpaca_key["key"], alpaca_key["secret_key"], logger)
     wallStreet = Market(alpaca_key["key"], alpaca_key["secret_key"], mywallet)
-    print("market open?:", wallStreet.isMarketOpen())
-    exit(0)
     strategies = []
     for i in range(1, len(stocks)):
         strategies.append(Strategy(stocks[i], MIN_INTERVAL, MINIUM_PERIODS))
 
     ticker = threading.Event()
     current_time = datetime.now()
-    while not ticker.wait(WAIT_TIME_SECONDS):
+    script_time = 0
+    while not ticker.wait(WAIT_TIME_SECONDS - script_time):
+        start_time = time.time()
         timestamp = current_time.strftime("%Y-%m-%d %H:%M:%S")
         print(timestamp)
         for st in strategies:
@@ -99,6 +99,7 @@ def main():
                 else:
                     print("Errore aggiunta dati stock", st.name, )
         current_time = current_time + timedelta(minutes=MIN_INTERVAL)
+        script_time = time.time() - start_time
     sys.exit(1)
 
 if __name__ == "__main__":
