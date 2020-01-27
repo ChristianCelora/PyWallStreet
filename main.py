@@ -93,7 +93,7 @@ def main():
                                 print("Sold:",invested,"qty. Gained:",gains,"EUR. New balance", mywallet.getBudget())
                         elif action > 0:
                             print("Oversold market.")
-                            if invested != 0:
+                            if invested == 0:
                                 qty_bought = wallStreet.buyStock(st.name, math.floor(mywallet.getBudget()/len(strategies)) )
                                 print("Bought:",qty_bought,"qty")
                         else:
