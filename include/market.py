@@ -19,13 +19,13 @@ class Wallet:
     def __updateBudget(self):
         self.__budget = self.__alpacaapi.getAlpacaAccountBudget()
 
-    def buyStock(self, stock: str, qty: float, price: float):
+    def buyStock(self, stock: str, qty: int, price: float):
         self.__updateBudget()
         self.__alpacaapi.newOrder(stock, qty, True)
         if not self.__logger is None:
             self.__logger.log_action(stock, "BUY", qty, price, self.__budget)
 
-    def sellStock(self, stock: str, qty: float, price: float):   
+    def sellStock(self, stock: str, qty: int, price: float):   
         self.__updateBudget()
         self.__alpacaapi.newOrder(stock, qty, False)
         if not self.__logger is None:
@@ -65,7 +65,7 @@ class Market:
         price = self.getRealTimePrice(stock)
         if price <= 0:
             return 0
-        qty_bought = self.__floorTwoDec(budget / price)
+        qty_bought = int(self.__floorTwoDec(budget / price))
         self.__wallet.buyStock(stock, qty_bought, price)
         return qty_bought
 
@@ -79,7 +79,6 @@ class Market:
 
     def isMarketOpen(self) -> bool:
         market_time = self.__alpacaapi.getMarketTimes()
-        print(market_time)
         if "is_open" in market_time:
             return market_time["is_open"]
         return False
@@ -103,7 +102,7 @@ class AlpacaAPI:
         return self.__alpacaRequest("GET", self.ALPACA_PAPER_URL+"v2/positions/"+stock, head, None)
 
     # Market
-    def newOrder(self, stock: str, qty: float, buy_flag: bool) -> float:
+    def newOrder(self, stock: str, qty: int, buy_flag: bool) -> float:
         head = self.__getHeader()
         if buy_flag: 
             side = "buy"
