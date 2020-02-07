@@ -49,8 +49,9 @@ def main():
     alpaca_key = getAlpacaKey()
     MIN_INTERVAL = 5
     MINIUM_PERIODS = 10
-    
-    mywallet = Wallet(alpaca_key["key"], alpaca_key["secret_key"], None)
+
+    logger = Logger( os.path.join(os.path.dirname(__file__), "Log") )
+    mywallet = Wallet(alpaca_key["key"], alpaca_key["secret_key"], logger)
     wallStreet = Market(alpaca_key["key"], alpaca_key["secret_key"], mywallet)
     stock = "GOOGL"
     strategies = [Strategy(stock, MIN_INTERVAL, MINIUM_PERIODS)]

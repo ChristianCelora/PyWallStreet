@@ -1,6 +1,7 @@
 import requests
 import math
-#from datetime import datetime
+from datetime import datetime, timedelta
+import dateutil.parser
 from .logger import Logger
 from .strategy import Stock
 
@@ -31,10 +32,10 @@ class Wallet:
         if not self.__logger is None:
             self.__logger.log_action(stock, "SELL", qty, price, self.__budget)
 
-    def getStock(self, stock: str) -> float:
+    def getStock(self, stock: str) -> int:
         try:
             position = self.__alpacaapi.getPosition(stock)
-            return position["qty"]
+            return int(position["qty"])
         except:
             return 0
 
@@ -82,6 +83,25 @@ class Market:
         if "is_open" in market_time:
             return market_time["is_open"]
         return False
+
+    def getMarketCloseDatetime(self) -> datetime:
+        market_time = self.__alpacaapi.getMarketTimes()
+        if not "next_close" in market_time:
+            return None
+        try:
+            date = market_time["next_close"][:-6]
+            timez = market_time["next_close"][-6:]
+            date_obj = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S")
+            if timez[0] == "+":
+                date_obj = date_obj + timedelta(minutes=int(timez[-2:]))
+                date_obj = date_obj + timedelta(hours=int(timez.split(":")[0]))
+            elif timez[0] == "-":
+                date_obj = date_obj - timedelta(minutes=int(timez[-2:]))
+                date_obj = date_obj - timedelta(hours=int(timez.split(":")[0]))
+        except Exception as e:
+            return None
+
+        return date_obj
 
 class AlpacaAPI:
     ALPACA_PAPER_URL = "https://paper-api.alpaca.markets/"

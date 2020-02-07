@@ -20,21 +20,28 @@ class Stock:
 
 # Investing strategy
 class Strategy:
-    def __init__(self, key: str, inter: int, periods: int):
+    def __init__(self, stock: str, inter: int, periods: int):
         self.periods = periods
         self.min_interval = inter
         self.data = {}
-        self.name = key
-        #self.invested = 0
+        self.name = stock
+
+    def addData(self, time: str, stock_data: dict):
+        if time not in self.data:
+            self.data[time] = Stock(self.name, time, stock_data)
+            return True
+        return False
 
     def action(self) -> int:
         if len(self.data.keys()) > self.periods:  # Do nothin until you reach min periods 
             stoc_index = self.getStochasticIndex()
             mov_avg = self.getMovingAverage()
             last_period = list(self.data.keys())[-1]
-            if stoc_index["%K"] >= 80 and mov_avg > self.data[last_period].close:
+            #if stoc_index["%K"] >= 80 and mov_avg > self.data[last_period].close:
+            if stoc_index["%K"] >= 80:
                 return -1
-            elif stoc_index["%K"] <= 20 and mov_avg < self.data[last_period].close:
+            #elif stoc_index["%K"] <= 20 and mov_avg < self.data[last_period].close:
+            elif stoc_index["%K"] <= 20:
                 return 1
         return 0
 
@@ -45,13 +52,6 @@ class Strategy:
             sma += self.data[timestamps[i]].close
 
         return round(sma / self.periods, 2)
-
-
-    def addData(self, time: str, stock_data: dict):
-        if time not in self.data:
-            self.data[time] = Stock(self.name, time, stock_data)
-            return True
-        return False
 
     def getStochasticIndex(self) -> dict:
         #calculate start period and end period
@@ -101,6 +101,8 @@ class Strategy:
         return {"low": low, "high": high}
 
     def calcKPercent(self, closing_price: float, high: float, low: float) -> float:
+        if low == high:
+            return 50
         return (closing_price - low) / (high - low) * 100
 
     """def isUptrending(self) -> bool:

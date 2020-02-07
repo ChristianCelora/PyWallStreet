@@ -60,7 +60,8 @@ def main():
     
     alpha_key = getAlphaVantageKey()
     alpaca_key = getAlpacaKey()
-    logger = Logger( os.path.join(os.path.dirname(__file__), "Log") )
+    #logger = Logger( os.path.join(os.path.dirname(__file__), "Log") )
+    logger = None
     mywallet = Wallet(alpaca_key["key"], alpaca_key["secret_key"], logger)
     wallStreet = Market(alpaca_key["key"], alpaca_key["secret_key"], mywallet)
     strategies = []
@@ -70,11 +71,19 @@ def main():
     ticker = threading.Event()
     current_time = datetime.now()
     script_time = 0
-    while not ticker.wait(WAIT_TIME_SECONDS - script_time):
+    wait_time = 0
+    market_close = wallStreet.getMarketCloseDatetime()
+    print("Market will close at: "+market_close.strftime("%m/%d/%Y, %H:%M:%S"))
+    while not ticker.wait(wait_time - script_time):
         start_time = time.time()
+        wait_time = WAIT_TIME_SECONDS
         timestamp = current_time.strftime("%Y-%m-%d %H:%M:%S")
         print(timestamp)
+        print(datetime.now()) # test
         if wallStreet.isMarketOpen():
+            time_diff = market_close - datetime.now() # time to market close  (should go in strategy)
+            if int(time_diff.seconds//60) < 10: # if less than 10 min remaining sell all
+                break
             print("Market open")
             for st in strategies:
                 print("Stock:",st.name)
@@ -99,11 +108,18 @@ def main():
                         else:
                             print("Wait")
                     else:
-                        print("Errore aggiunta dati stock", st.name, )
+                        print("Errore aggiunta dati stock", st.name)
         else:
             print("Market closed")
         current_time = current_time + timedelta(minutes=MIN_INTERVAL)
         script_time = time.time() - start_time
+
+    #sell everithing left
+    for st in strategies:
+        invested = mywallet.getStock(st.name)
+        if invested > 0:
+            wallStreet.sellStock(st.name)
+
     sys.exit(1)
 
 if __name__ == "__main__":
