@@ -2,41 +2,47 @@ import pytest
 from datetime import datetime, timedelta
 from include.strategy import Strategy, Stock
 
-# INIT
 MINUTES_PERIOD = 5
-test_stock = Strategy("TEST", 10, MINUTES_PERIOD)
+@pytest.fixture(scope="module")
+def strategy():
+    strategy = Strategy("TEST", 10, MINUTES_PERIOD)
+    return strategy
 
-def test_calc_k_percent():
-    k_perc = test_stock.calcKPercent(100, 111, 86)
+def test_calc_k_percent(strategy):
+    k_perc = strategy.calcKPercent(100, 111, 86)
     expected = (100 - 86)/(111 - 86) * 100
     assert k_perc == expected
 
-def test_get_low_high():
+def test_format_date(strategy):
+    timestamp = datetime.now()
+    date_str = strategy.formatDate(timestamp)
+    assert type(date_str) is str
+    assert date_str == timestamp.strftime("%Y-%m-%d %H:%M:%S")
+
+def test_get_low_high(strategy):
     # init
     high = 0
     low = 1000
     now = datetime(2020, 2, 13, 14, 0, 0)   # date choosen is irrelevant
+    high_prices = [100, 120, 130, 145, 90]
+    low_prices = [80, 50, 90, 95, 65]
     timestamp = now
-    for i in range(0,5):
-        state_high = 100 + 5*i
-        state_low = 100 - 5*i
+    for i in range(0,len(high_prices)):
         stock_data = {
             Stock.OPEN_INDEX: 100,
-            Stock.HIGH_INDEX: state_high,
-            Stock.LOW_INDEX: state_low,
+            Stock.HIGH_INDEX: high_prices[i],
+            Stock.LOW_INDEX: low_prices[i],
             Stock.CLOSE_INDEX: 100,
             Stock.VOLUME_INDEX: 100,
         }
-        test_stock.addData(timestamp.strftime("%Y-%m-%d %H:%M:%S"), stock_data)
-        if state_low < low:
-            low = state_low
-        if state_high > high:
-            high = state_high
+        strategy.addData(timestamp.strftime("%Y-%m-%d %H:%M:%S"), stock_data)
         if i < 4:   # skip last
             timestamp = timestamp + timedelta(minutes=MINUTES_PERIOD)
     # test
-    real = test_stock.getLowHigh(timestamp, now)
-    assert low == real["low"]
-    assert high == real["high"]
+    real = strategy.getLowHigh(timestamp, now)
+    assert "low" in real
+    assert "high" in real
+    assert real["low"] == min(low_prices)
+    assert real["high"] == max(high_prices)
 
     
