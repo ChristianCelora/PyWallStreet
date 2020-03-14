@@ -1,8 +1,10 @@
 alpha_vantage_key.json
 alpaca_api_key.json
 include/__pycache__/*
-test/__pycache__/*
 Log/*
 !Log/.gitkeep
 !Log/TestLog
 tradingBotLogic.png 
+test/__pycache__/*
+!test/generated/.gitkeep
+test/generated/*
