@@ -1,19 +1,25 @@
 import pytest
+import statistics
+import copy
 from datetime import datetime, timedelta
 from include.strategy import Strategy, Stock
 
+# INIT
 MINUTES_PER_PERIOD = 5
 PERIODS = 5
 START_TIME = datetime(2020, 2, 13, 14, 0, 0)  # date choosen is irrelevant
 END_TIME = START_TIME + timedelta(minutes=MINUTES_PER_PERIOD * (PERIODS-1))
+high_prices = [100, 120, 130, 145, 90]
+low_prices = [80, 50, 90, 95, 65]
+close_prices = [90, 95, 112, 136, 70]
 
 @pytest.fixture(scope="module")
 def strategy():
-    global END_TIME
+    global high_prices
+    global low_prices
+    global close_prices
+
     strategy = Strategy("TEST", PERIODS, MINUTES_PER_PERIOD)
-    high_prices = [100, 120, 130, 145, 90]
-    low_prices = [80, 50, 90, 95, 65]
-    close_prices = [90, 95, 112, 136, 70]
     timestamp = START_TIME
     for i in range(0,PERIODS):
         stock_data = {
@@ -26,6 +32,7 @@ def strategy():
         strategy.addData(timestamp.strftime("%Y-%m-%d %H:%M:%S"), stock_data)
         if i < PERIODS-1:   # skip last
             timestamp = timestamp + timedelta(minutes=MINUTES_PER_PERIOD)
+
     return strategy
     
 @pytest.fixture(scope="module")
@@ -58,12 +65,38 @@ def test_calc_k_percent(strategy):
     assert k_perc == expected
 
 def test_get_low_high(strategy, start_time, end_time):
+    global high_prices
+    global low_prices
+
     real = strategy.getLowHigh(end_time, start_time)
     assert "low" in real
     assert "high" in real
-    assert real["low"] == 50
-    assert real["high"] == 145
+    assert real["low"] == min(low_prices)
+    assert real["high"] == max(high_prices)
 
-#def test_get_moving_average(strategy):
+def test_get_moving_average(strategy, end_time):
+    global close_prices
+
+    expected_sma = round(statistics.mean(close_prices), 2)
+    assert strategy.getMovingAverage() == expected_sma
+    st2 = copy.deepcopy(strategy) 
+    new_close_price = 125
+    new_close_prices = copy.deepcopy(close_prices) 
+    new_close_prices.append(new_close_price)
+    end_time += timedelta(minutes=MINUTES_PER_PERIOD)
+    stock_data = {
+            Stock.OPEN_INDEX: 100,
+            Stock.HIGH_INDEX: 100,
+            Stock.LOW_INDEX: 100,
+            Stock.CLOSE_INDEX: new_close_price,
+            Stock.VOLUME_INDEX: 100,
+        }
+    st2.addData(end_time.strftime("%Y-%m-%d %H:%M:%S"), stock_data)
+    new_expected_sma = round(statistics.mean(new_close_prices[1:]), 2)
+    assert st2.getMovingAverage() == new_expected_sma
+
+
+
+
 
     

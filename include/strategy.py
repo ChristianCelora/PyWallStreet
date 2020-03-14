@@ -47,9 +47,10 @@ class Strategy:
 
     def getMovingAverage(self) -> float:
         sma = 0
-        timestamps = list(self.data.keys())[-self.periods:]
-        for i in range(0, self.periods):
-            sma += self.data[timestamps[i]].close
+        # get only last n-th timestamps (n = number periods)
+        timestamps = list(self.data.keys())[-self.periods:] 
+        for time in timestamps:
+            sma += self.data[time].close
 
         return round(sma / self.periods, 2)
 
