@@ -72,15 +72,7 @@ class Strategy:
 
     # date_str: "YYYY-MM-DD HH:MM:SS"
     def getDatetimeFromStr(self, date_str: str) -> datetime:
-        date_arr = date_str.split(" ")
-        date = date_arr[0].split("-")
-        time = date_arr[1].split(":")
-        try:
-            now = datetime(int(date[0]), int(date[1]), int(date[2]), int(time[0]), int(time[1]), int(time[2]), 000000)
-        except IndexError:
-            raise Exception("date_str deve essere nel formato YYYY-MM-DD HH:MM:SS")
-
-        return now
+        return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
 
     def formatDate(self, date: datetime) -> str:
         return date.strftime("%Y-%m-%d %H:%M:%S")

@@ -19,6 +19,15 @@ def test_format_date(strategy):
     assert type(date_str) is str
     assert date_str == timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
+def test_get_date_from_string(strategy):
+    date_obj = strategy.getDatetimeFromStr("2020-02-17 14:00:00")
+    assert type(date_obj) is datetime
+    assert date_obj.date() == datetime(2020, 2, 17, 14, 0, 0).date()
+
+def test_get_date_from_string_wrong_format(strategy):
+    with pytest.raises(ValueError): 
+        strategy.getDatetimeFromStr("2020/02/17 14:00:00")
+
 def test_get_low_high(strategy):
     # init
     high = 0
