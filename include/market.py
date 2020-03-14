@@ -1,7 +1,7 @@
 import requests
 import math
 from datetime import datetime, timedelta
-import dateutil.parser
+#import dateutil.parser
 from .logger import Logger
 from .strategy import Stock
 

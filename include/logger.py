@@ -1,11 +1,13 @@
 import json
+from json.decoder import JSONDecodeError
 import os
 from datetime import datetime, timedelta
 
 class Logger:
-    def __init__(self, path):
-        today = datetime.today().strftime('%Y_%m_%d')
-        self.path = os.path.join(path, today + ".json")
+    def __init__(self, path, name = ""):
+        if name == "":
+            name = datetime.today().strftime('%Y_%m_%d')
+        self.path = os.path.join(path, name + ".json")
         log_file = open(self.path, "w+")    #create file if not exist
         log_file.close()
 
@@ -17,9 +19,13 @@ class Logger:
             "price": price,
             "budget": budget
         }
+        json_data = []
         with open(self.path, "r") as input_data:
-            json_data = json.load(input_data)
-        json_data.push(obj)
+            try:
+                json_data = json.load(input_data)
+            except JSONDecodeError: # error on empty file
+                pass
+        json_data.append(obj)
 
         with open(self.path, "w") as out_data:
             json.dump(json_data, out_data)
