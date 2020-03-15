@@ -8,3 +8,4 @@ tradingBotLogic.png
 test/__pycache__/*
 !test/generated/.gitkeep
 test/generated/*
+venv/
