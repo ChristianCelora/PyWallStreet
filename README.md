@@ -1,7 +1,9 @@
 # PyWallStreet
-
+[![Github All Releases](https://img.shields.io/github/downloads/atom/atom/total.svg?style=flat)]()  
+[![PyPi Version](https://img.shields.io/pypi/v/yt2mp3.svg)](https://pypi.python.org/pypi/yt2mp3/)
+[![GitHub watchers](https://img.shields.io/github/watchers/badges/shields.svg?style=social&label=Watch&style=plastic)]()
 ## About
-this project is a Python 3 bot for automate online trading.
+T+his project is a Python 3 bot for automate online trading.
 
 ## Install
 To install the project launch the command 
