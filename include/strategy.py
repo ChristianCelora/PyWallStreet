@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from abc import ABC, abstractmethod
 
 # Simple stock
 class Stock:
@@ -19,12 +20,27 @@ class Stock:
         self.volume = float(data[self.VOLUME_INDEX])
 
 # Investing strategy
-class Strategy:
+class AbstractStrategy(ABC):
+
+    DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
     def __init__(self, stock: str, inter: int, periods: int):
         self.periods = periods
         self.min_interval = inter
         self.data = {}
         self.name = stock
+
+    def getDatetimeFromStr(self, date_str: str) -> datetime:
+        return datetime.strptime(date_str, self.DATE_FORMAT)
+
+    def getStrFromDatetime(self, date: datetime) -> str:
+        return date.strftime(self.DATE_FORMAT)
+
+    @abstractmethod
+    def action(self) -> int:
+        pass
+
+class Strategy(AbstractStrategy):
 
     def addData(self, time: str, stock_data: dict):
         if time not in self.data:
@@ -48,8 +64,9 @@ class Strategy:
     def getMovingAverage(self) -> float:
         sma = 0
         # get only last n-th timestamps (n = number periods)
-        timestamps = list(self.data.keys())[-self.periods:] 
-        for time in timestamps:
+        timestamps = list(self.data.keys())
+        timestamps.sort()
+        for time in timestamps[-self.periods:]:
             sma += self.data[time].close
 
         return round(sma / self.periods, 2)
@@ -59,8 +76,8 @@ class Strategy:
         last_period = list(self.data.keys())[-1]
         now = self.getDatetimeFromStr(last_period)
         past = now - timedelta(minutes=self.min_interval*self.periods)
-        now_str = self.formatDate(now)
-        past_str = self.formatDate(past)
+        now_str = self.getStrFromDatetime(now)
+        past_str = self.getStrFromDatetime(past)
         if not past_str in self.data:
             raise Exception(past_str," not in stock data")
         limits = self.getLowHigh(now, past)
@@ -71,21 +88,14 @@ class Strategy:
 
         return {"%K": perc_k, "%D": perc_d}  
 
-    # date_str: "YYYY-MM-DD HH:MM:SS"
-    def getDatetimeFromStr(self, date_str: str) -> datetime:
-        return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
-
-    def formatDate(self, date: datetime) -> str:
-        return date.strftime("%Y-%m-%d %H:%M:%S")
-
     def getLowHigh(self, now: datetime, past: datetime) -> dict:
-        low = self.data[self.formatDate(past)].low
-        high = self.data[self.formatDate(past)].high
+        low = self.data[self.getStrFromDatetime(past)].low
+        high = self.data[self.getStrFromDatetime(past)].high
 
         next_data = past
-        while self.formatDate(next_data) != self.formatDate(now):
+        while self.getStrFromDatetime(next_data) != self.getStrFromDatetime(now):
             next_data = next_data + timedelta(minutes=5)
-            next_data_str = self.formatDate(next_data)
+            next_data_str = self.getStrFromDatetime(next_data)
             if self.data[next_data_str].low < low:
                 low = self.data[next_data_str].low
             if self.data[next_data_str].high > high:

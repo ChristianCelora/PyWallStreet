@@ -45,7 +45,7 @@ def end_time():
 
 # Dates function tests
 def test_format_date(strategy, start_time):
-    date_str = strategy.formatDate(start_time)
+    date_str = strategy.getStrFromDatetime(start_time)
     assert type(date_str) is str
     assert date_str == start_time.strftime("%Y-%m-%d %H:%M:%S")
 
