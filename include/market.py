@@ -143,7 +143,7 @@ class AlpacaAPI:
         head = self.__getHeader()
         params = {"symbols": stock, "limit": 1}
         str_interval = interval+"Min"
-        return self.__alpacaRequest("GET", self.ALPACA_DATA_URL+"v1/bars/5Min", head, params)
+        return self.__alpacaRequest("GET", self.ALPACA_DATA_URL+"v1/bars/"+str_interval, head, params)
         
     def getMarketTimes(self) -> dict:
         head = self.__getHeader()
