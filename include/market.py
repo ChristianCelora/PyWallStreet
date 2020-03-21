@@ -52,28 +52,29 @@ class Market:
     def __floorTwoDec(self, val: float) -> float:
         return math.floor(val * 100) / 100.0
 
-    def getStockData(self, stock: str, timestamp: str) -> dict:
-        return self.__alpacaapi.getStockData(stock, timestamp)
+    def getStockData(self, stock: str, interval: int, timestamp: datetime) -> dict:
+        #return self.__alpacaapi.getStockData(stock, interval, timestamp)
+        return self.__alpacaapi.getStockData(stock, interval)
 
-    def getRealTimePrice(self, stock: str) -> float:
-        data = self.__alpacaapi.getRealTimePrice(stock)
+    def getRealTimePrice(self, stock: str, interval: int) -> float:
+        data = self.__alpacaapi.getRealTimePrice(stock, interval)
         if not stock in data:
             return 0
         stock = Stock(stock, 0, data[stock][0])
         return stock.close
     
-    def buyStock(self, stock: str, budget: float) -> float:
-        price = self.getRealTimePrice(stock)
+    def buyStock(self, stock: str, interval: int, budget: float) -> float:
+        price = self.getRealTimePrice(stock, interval)
         if price <= 0:
             return 0
         qty_bought = int(self.__floorTwoDec(budget / price))
         self.__wallet.buyStock(stock, qty_bought, price)
         return qty_bought
 
-    def sellStock(self, stock: str, qty = -1) -> float:
+    def sellStock(self, stock: str, interval: int, qty = -1) -> float:
         if qty == -1:   # if -1 sell all qty
             qty = self.__wallet.getStock(stock)
-        price = self.getRealTimePrice(stock)
+        price = self.getRealTimePrice(stock, interval)
         return_gain = self.__floorTwoDec(qty * price)
         self.__wallet.sellStock(stock, qty, price)
         return return_gain
@@ -132,14 +133,16 @@ class AlpacaAPI:
         order = self.__alpacaRequest("POST", self.ALPACA_PAPER_URL+"v2/orders", head, data)
         return order["id"]
 
-    def getStockData(self, stock: str, timestamp: str) -> dict:
-        head = self.__getHeader()
-        params = {"symbols": stock, "limit": 1, "start": timestamp}
-        return self.__alpacaRequest("GET", self.ALPACA_DATA_URL+"v1/bars/5Min", head, params)
-
-    def getRealTimePrice(self, stock: str) -> float:
+    def getStockData(self, stock: str, interval: int) -> dict:
         head = self.__getHeader()
         params = {"symbols": stock, "limit": 1}
+        str_interval = interval+"Min"
+        return self.__alpacaRequest("GET", self.ALPACA_DATA_URL+"v1/bars/"+str_interval, head, params)
+
+    def getRealTimePrice(self, stock: str, interval: int) -> float:
+        head = self.__getHeader()
+        params = {"symbols": stock, "limit": 1}
+        str_interval = interval+"Min"
         return self.__alpacaRequest("GET", self.ALPACA_DATA_URL+"v1/bars/5Min", head, params)
         
     def getMarketTimes(self) -> dict:

@@ -8,7 +8,7 @@ from include.strategy import Stock, Strategy
 from include.logger import Logger
 from include.market import Market, Wallet
 
-def getAlphaVantageKey() -> str:
+"""def getAlphaVantageKey() -> str:
     script_dir = os.path.dirname(__file__) #absolute dir the script is in
     json_data = ""
     #read file
@@ -20,7 +20,7 @@ def getAlphaVantageKey() -> str:
     #get key
     alpha_key = json_data["key"]
 
-    return alpha_key
+    return alpha_key"""
 
 def getAlpacaKey() -> dict:
     script_dir = os.path.dirname(__file__) #absolute dir the script is in
@@ -58,7 +58,7 @@ def main():
     if len(stocks) < 2:
         raise Exception("No stock passed")
     
-    alpha_key = getAlphaVantageKey()
+    #alpha_key = getAlphaVantageKey()
     alpaca_key = getAlpacaKey()
     #logger = Logger( os.path.join(os.path.dirname(__file__), "Log") )
     logger = None
@@ -87,24 +87,32 @@ def main():
             print("Market open")
             for st in strategies:
                 print("Stock:",st.name)
-                stock_data = wallStreet.getStockData(st.name, MIN_INTERVAL)
+                stock_data = wallStreet.getStockData(st.name, MIN_INTERVAL, timestamp)
                 if not st.name in stock_data:
                     raise Exception("Errore recupero dati stock ("+st.name+")")   
                 if len(stock_data[st.name]) > 0:
-                    isAdded = st.addData(timestamp, stock_data[st.name][0])
+                    last_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(stock_data[st.name][0]["t"]))
+                    print("last timestamp data:", last_timestamp)
+                    isAdded = st.addData(last_timestamp, stock_data[st.name][0])
                     if isAdded: # check if we have new data
                         action = st.action()
                         invested = mywallet.getStock(st.name)
                         if action < 0:
                             print("Overbought market.")
                             if invested > 0:
-                                gains = wallStreet.sellStock(st.name)
-                                print("Sold:",invested,"qty. Gained:",gains,"EUR. New balance", mywallet.getBudget())
+                                try:
+                                    gains = wallStreet.sellStock(st.name, MIN_INTERVAL)
+                                    print("Sold:",invested,"qty. Gained:",gains,"EUR. New balance", mywallet.getBudget())
+                                except Exception as e:
+                                    print(str(e))
                         elif action > 0:
                             print("Oversold market.")
                             if invested == 0:
-                                qty_bought = wallStreet.buyStock(st.name, math.floor(mywallet.getBudget()/len(strategies)) )
-                                print("Bought:",qty_bought,"qty")
+                                try:
+                                    qty_bought = wallStreet.buyStock(st.name, MIN_INTERVAL, math.floor(mywallet.getBudget()/len(strategies)) )
+                                    print("Bought:",qty_bought,"qty")
+                                except Exception as e:
+                                    print(str(e))
                         else:
                             print("Wait")
                     else:
@@ -118,7 +126,10 @@ def main():
     for st in strategies:
         invested = mywallet.getStock(st.name)
         if invested > 0:
-            wallStreet.sellStock(st.name)
+            try:
+                wallStreet.sellStock(st.name, MIN_INTERVAL)
+            except Exception as e:
+                print(str(e))
 
     sys.exit(1)
 
