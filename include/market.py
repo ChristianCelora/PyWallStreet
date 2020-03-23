@@ -52,9 +52,10 @@ class Market:
     def __floorTwoDec(self, val: float) -> float:
         return math.floor(val * 100) / 100.0
 
-    def getStockData(self, stock: str, interval: int, timestamp: datetime) -> dict:
-        #return self.__alpacaapi.getStockData(stock, interval, timestamp)
-        return self.__alpacaapi.getStockData(stock, interval)
+    def getStockData(self, stock: str, interval: int, timestamp = "") -> dict:
+        print("time: ",timestamp)
+        return self.__alpacaapi.getStockData(stock, interval, timestamp)
+        #return self.__alpacaapi.getStockData(stock, interval)
 
     def getRealTimePrice(self, stock: str, interval: int) -> float:
         data = self.__alpacaapi.getRealTimePrice(stock, interval)
@@ -133,16 +134,18 @@ class AlpacaAPI:
         order = self.__alpacaRequest("POST", self.ALPACA_PAPER_URL+"v2/orders", head, data)
         return order["id"]
 
-    def getStockData(self, stock: str, interval: int) -> dict:
+    def getStockData(self, stock: str, interval: int, start: str) -> dict:
         head = self.__getHeader()
         params = {"symbols": stock, "limit": 1}
-        str_interval = interval+"Min"
+        if start != "":
+            params["start"] = start
+        str_interval = str(interval)+"Min"
         return self.__alpacaRequest("GET", self.ALPACA_DATA_URL+"v1/bars/"+str_interval, head, params)
 
     def getRealTimePrice(self, stock: str, interval: int) -> float:
         head = self.__getHeader()
         params = {"symbols": stock, "limit": 1}
-        str_interval = interval+"Min"
+        str_interval = str(interval)+"Min"
         return self.__alpacaRequest("GET", self.ALPACA_DATA_URL+"v1/bars/"+str_interval, head, params)
         
     def getMarketTimes(self) -> dict:
