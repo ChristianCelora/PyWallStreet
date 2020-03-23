@@ -91,16 +91,11 @@ class Market:
         if not "next_close" in market_time:
             return None
         try:
-            date = market_time["next_close"][:-6]
-            timez = market_time["next_close"][-6:]
-            date_obj = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S")
-            if timez[0] == "+":
-                date_obj = date_obj + timedelta(minutes=int(timez[-2:]))
-                date_obj = date_obj + timedelta(hours=int(timez.split(":")[0]))
-            elif timez[0] == "-":
-                date_obj = date_obj - timedelta(minutes=int(timez[-2:]))
-                date_obj = date_obj - timedelta(hours=int(timez.split(":")[0]))
+            unformatted_time = market_time["next_close"].rsplit(":", 1)
+            formatted_time = "".join(unformatted_time)
+            date_obj = datetime.strptime(formatted_time, "%Y-%m-%dT%H:%M:%S%z")
         except Exception as e:
+            print(str(e))
             return None
 
         return date_obj

@@ -73,6 +73,8 @@ def main():
     script_time = 0
     wait_time = 0
     market_close = wallStreet.getMarketCloseDatetime()
+    if market_close is None:
+        exit("Market close time not valid")
     print("Market will close at: "+market_close.strftime("%m/%d/%Y, %H:%M:%S"))
     while not ticker.wait(wait_time - script_time):
         start_time = time.time()

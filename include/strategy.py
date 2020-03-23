@@ -46,7 +46,7 @@ class Strategy(AbstractStrategy):
     def addData(self, time: str, stock_data: dict):
         if not time in self.timestamps:
             self.bars.append(Stock(self.name, time, stock_data))
-            self.timestamps.append([time])
+            self.timestamps.append(time)
             return True
         return False
 
