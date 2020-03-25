@@ -54,7 +54,6 @@ class Strategy(AbstractStrategy):
         if len(self.bars) > self.periods:  # Do nothin until you reach min periods 
             stoc_index = self.getStochasticIndex()
             mov_avg = self.getMovingAverage()
-            print("K%:", stoc_index["%K"], "mov_avg:", mov_avg, "last_close:", self.bars[-1].close )
             if stoc_index["%K"] >= 80 and mov_avg > self.bars[-1].close:
             #if stoc_index["%K"] >= 80:
                 return -1
@@ -70,14 +69,12 @@ class Strategy(AbstractStrategy):
         # get only last n-th timestamps (n = number periods)
         for bar in self.bars[-self.periods:]:
             sma += bar.close
-        print("tot_sma", sma)
         return round(sma / self.periods, 2)
 
     def getStochasticIndex(self) -> dict:
         #calculate start period and end period
         last_bar = self.bars[-1]
         limits = self.getLowHigh()
-        print(limits)
         #calculate stock %K
         perc_k = self.calcKPercent(float(last_bar.close), float(limits["low"]), float(limits["high"]))
         #calculate stock %D

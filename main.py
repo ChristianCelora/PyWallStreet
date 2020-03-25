@@ -3,6 +3,7 @@ import os
 import math
 import json
 import threading, time
+import pytz
 from datetime import datetime, timedelta
 from include.strategy import Stock, Strategy
 from include.logger import Logger
@@ -81,9 +82,8 @@ def main():
         wait_time = WAIT_TIME_SECONDS
         timestamp = current_time.strftime("%Y-%m-%d %H:%M:%S")
         print(timestamp)
-        print(datetime.now()) # test
         if wallStreet.isMarketOpen():
-            time_diff = market_close - datetime.now() # time to market close  (should go in strategy)
+            time_diff = market_close - datetime.utcnow().replace(tzinfo=pytz.utc) # time to market close  (should go in strategy)
             if int(time_diff.seconds//60) < 10: # if less than 10 min remaining sell all
                 break
             print("Market open")
@@ -118,7 +118,7 @@ def main():
                         else:
                             print("Wait")
                     else:
-                        print("Errore aggiunta dati stock", st.name)
+                        print("Barra già presente per", st.name)
         else:
             print("Market closed")
         current_time = current_time + timedelta(minutes=MIN_INTERVAL)
