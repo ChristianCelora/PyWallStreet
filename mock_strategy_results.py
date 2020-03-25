@@ -1,7 +1,7 @@
 import os
 import json
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from include.market import Market, Wallet
 from include.logger import Logger
 from include.strategy import Stock, Strategy
@@ -25,7 +25,7 @@ def getAlpacaKey() -> dict:
     json_data = ""
     alpaca_key = {}
     #read file
-    with open(script_dir+"\\alpaca_api_key.json", "r") as f:
+    with open( os.path.join(script_dir, "alpaca_api_key.json"), "r") as f:
         json_data = json.load(f)
     #get JSON data
     if (not "key" in json_data) or (not "secret_key" in json_data):
@@ -45,7 +45,7 @@ def getTime(timestamp: str):
     return time[1]
 
 def main():
-    alpha_key = getAlphaVantageKey()
+    #alpha_key = getAlphaVantageKey()
     alpaca_key = getAlpacaKey()
     MIN_INTERVAL = 5
     MINIUM_PERIODS = 10
@@ -64,8 +64,9 @@ def main():
         timestamp = current_time.strftime("%Y-%m-%d %H:%M:%S")
         print(timestamp)
         for st in strategies:
-            data = wallStreet.getStockData(st.name, current_time.isoformat()) # retrive stock data
-            if st.name in data:
+
+            data = wallStreet.getStockData(st.name, MIN_INTERVAL, current_time.replace(tzinfo=timezone.utc).astimezone().replace(microsecond=0).isoformat()) # retrive stock data
+            if st.name in data and len(data[st.name]) > 0:
                 print(data[st.name])
                 st.addData(timestamp, data[st.name][0])
                 action = st.action()
@@ -74,7 +75,7 @@ def main():
                     print(timestamp, "Overbought market.")
                     if invested > 0:
                         print("SELL!")
-                        wallStreet.sellStock(st.name, mywallet.getStock(st.name))
+                        wallStreet.sellStock(st.name, MIN_INTERVAL, mywallet.getStock(st.name))
                         n_sell += 1
 
                 elif action > 0:
@@ -82,13 +83,13 @@ def main():
                     if invested == 0:
                         print("BUY!")
                         budget = math.floor(mywallet.getBudget()/len(strategies) * 100) / 100.0
-                        wallStreet.buyStock(st.name, budget)
+                        wallStreet.buyStock(st.name, MIN_INTERVAL, budget)
                         n_buy += 1
         current_time = current_time + timedelta(minutes=5)
     #sell everithing left
     for st in strategies:
         mywallet.getStock(st.name)
-        wallStreet.sellStock(st.name)
+        wallStreet.sellStock(st.name, MIN_INTERVAL, mywallet.getStock(st.name))
     print("Transactions:", n_buy + n_sell, "BUY:", n_buy, "SELL:", n_sell)
     print("End of the day:", mywallet.getBudget())
 

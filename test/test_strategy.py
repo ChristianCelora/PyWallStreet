@@ -64,11 +64,11 @@ def test_calc_k_percent(strategy):
     expected = (100 - 86)/(111 - 86) * 100
     assert k_perc == expected
 
-def test_get_low_high(strategy, start_time, end_time):
+def test_get_low_high(strategy):
     global high_prices
     global low_prices
 
-    real = strategy.getLowHigh(end_time, start_time)
+    real = strategy.getLowHigh()
     assert "low" in real
     assert "high" in real
     assert real["low"] == min(low_prices)

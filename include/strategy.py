@@ -27,8 +27,9 @@ class AbstractStrategy(ABC):
     def __init__(self, stock: str, inter: int, periods: int):
         self.periods = periods
         self.min_interval = inter
-        self.data = {}
         self.name = stock
+        self.bars = []
+        self.timestamps = []    # Keep track if the bar is alredy added
 
     def getDatetimeFromStr(self, date_str: str) -> datetime:
         return datetime.strptime(date_str, self.DATE_FORMAT)
@@ -43,63 +44,54 @@ class AbstractStrategy(ABC):
 class Strategy(AbstractStrategy):
 
     def addData(self, time: str, stock_data: dict):
-        if time not in self.data:
-            self.data[time] = Stock(self.name, time, stock_data)
+        if not time in self.timestamps:
+            self.bars.append(Stock(self.name, time, stock_data))
+            self.timestamps.append(time)
             return True
         return False
 
     def action(self) -> int:
-        if len(self.data.keys()) > self.periods:  # Do nothin until you reach min periods 
+        if len(self.bars) > self.periods:  # Do nothin until you reach min periods 
             stoc_index = self.getStochasticIndex()
             mov_avg = self.getMovingAverage()
-            last_period = list(self.data.keys())[-1]
-            #if stoc_index["%K"] >= 80 and mov_avg > self.data[last_period].close:
-            if stoc_index["%K"] >= 80:
+            if stoc_index["%K"] >= 80 and mov_avg > self.bars[-1].close:
+            #if stoc_index["%K"] >= 80:
                 return -1
-            #elif stoc_index["%K"] <= 20 and mov_avg < self.data[last_period].close:
-            elif stoc_index["%K"] <= 20:
+            elif stoc_index["%K"] <= 20 and mov_avg < self.bars[-1].close:
+            #elif stoc_index["%K"] <= 20:
                 return 1
         return 0
 
     def getMovingAverage(self) -> float:
+        if len(self.bars) < self.periods:
+            return -1
         sma = 0
         # get only last n-th timestamps (n = number periods)
-        timestamps = list(self.data.keys())
-        timestamps.sort()
-        for time in timestamps[-self.periods:]:
-            sma += self.data[time].close
-
+        for bar in self.bars[-self.periods:]:
+            sma += bar.close
         return round(sma / self.periods, 2)
 
     def getStochasticIndex(self) -> dict:
         #calculate start period and end period
-        last_period = list(self.data.keys())[-1]
-        now = self.getDatetimeFromStr(last_period)
-        past = now - timedelta(minutes=self.min_interval*self.periods)
-        now_str = self.getStrFromDatetime(now)
-        past_str = self.getStrFromDatetime(past)
-        if not past_str in self.data:
-            raise Exception(past_str," not in stock data")
-        limits = self.getLowHigh(now, past)
+        last_bar = self.bars[-1]
+        limits = self.getLowHigh()
         #calculate stock %K
-        perc_k = self.calcKPercent(float(self.data[now_str].close), float(limits["low"]), float(limits["high"]))
+        perc_k = self.calcKPercent(float(last_bar.close), float(limits["low"]), float(limits["high"]))
         #calculate stock %D
         perc_d = 50
 
         return {"%K": perc_k, "%D": perc_d}  
 
-    def getLowHigh(self, now: datetime, past: datetime) -> dict:
-        low = self.data[self.getStrFromDatetime(past)].low
-        high = self.data[self.getStrFromDatetime(past)].high
+    def getLowHigh(self) -> dict:
+        low = self.bars[-self.periods].low
+        high = self.bars[-self.periods].high
 
-        next_data = past
-        while self.getStrFromDatetime(next_data) != self.getStrFromDatetime(now):
-            next_data = next_data + timedelta(minutes=5)
-            next_data_str = self.getStrFromDatetime(next_data)
-            if self.data[next_data_str].low < low:
-                low = self.data[next_data_str].low
-            if self.data[next_data_str].high > high:
-                high = self.data[next_data_str].high
+        start = (self.periods-1)*-1
+        for i in range(start, len(self.bars)): 
+            if self.bars[i].low < low:
+                low = self.bars[i].low
+            if self.bars[i].high > high:
+                high = self.bars[i].high
 
         return {"low": low, "high": high}
 
@@ -107,8 +99,3 @@ class Strategy(AbstractStrategy):
         if low == high:
             return 50
         return (closing_price - low) / (high - low) * 100
-
-    """def isUptrending(self) -> bool:
-        keys = list(self.data.keys())
-        return ( self.data[keys[0]].open - self.data[keys[len(keys)-1]].close < 0 )
-    """

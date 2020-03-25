@@ -52,28 +52,30 @@ class Market:
     def __floorTwoDec(self, val: float) -> float:
         return math.floor(val * 100) / 100.0
 
-    def getStockData(self, stock: str, timestamp: str) -> dict:
-        return self.__alpacaapi.getStockData(stock, timestamp)
+    def getStockData(self, stock: str, interval: int, timestamp = "") -> dict:
+        print("time: ",timestamp)
+        return self.__alpacaapi.getStockData(stock, interval, timestamp)
+        #return self.__alpacaapi.getStockData(stock, interval)
 
-    def getRealTimePrice(self, stock: str) -> float:
-        data = self.__alpacaapi.getRealTimePrice(stock)
+    def getRealTimePrice(self, stock: str, interval: int) -> float:
+        data = self.__alpacaapi.getRealTimePrice(stock, interval)
         if not stock in data:
             return 0
         stock = Stock(stock, 0, data[stock][0])
         return stock.close
     
-    def buyStock(self, stock: str, budget: float) -> float:
-        price = self.getRealTimePrice(stock)
+    def buyStock(self, stock: str, interval: int, budget: float) -> float:
+        price = self.getRealTimePrice(stock, interval)
         if price <= 0:
             return 0
         qty_bought = int(self.__floorTwoDec(budget / price))
         self.__wallet.buyStock(stock, qty_bought, price)
         return qty_bought
 
-    def sellStock(self, stock: str, qty = -1) -> float:
+    def sellStock(self, stock: str, interval: int, qty = -1) -> float:
         if qty == -1:   # if -1 sell all qty
             qty = self.__wallet.getStock(stock)
-        price = self.getRealTimePrice(stock)
+        price = self.getRealTimePrice(stock, interval)
         return_gain = self.__floorTwoDec(qty * price)
         self.__wallet.sellStock(stock, qty, price)
         return return_gain
@@ -89,16 +91,11 @@ class Market:
         if not "next_close" in market_time:
             return None
         try:
-            date = market_time["next_close"][:-6]
-            timez = market_time["next_close"][-6:]
-            date_obj = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S")
-            if timez[0] == "+":
-                date_obj = date_obj + timedelta(minutes=int(timez[-2:]))
-                date_obj = date_obj + timedelta(hours=int(timez.split(":")[0]))
-            elif timez[0] == "-":
-                date_obj = date_obj - timedelta(minutes=int(timez[-2:]))
-                date_obj = date_obj - timedelta(hours=int(timez.split(":")[0]))
+            unformatted_time = market_time["next_close"].rsplit(":", 1)
+            formatted_time = "".join(unformatted_time)
+            date_obj = datetime.strptime(formatted_time, "%Y-%m-%dT%H:%M:%S%z")
         except Exception as e:
+            print(str(e))
             return None
 
         return date_obj
@@ -132,15 +129,19 @@ class AlpacaAPI:
         order = self.__alpacaRequest("POST", self.ALPACA_PAPER_URL+"v2/orders", head, data)
         return order["id"]
 
-    def getStockData(self, stock: str, timestamp: str) -> dict:
-        head = self.__getHeader()
-        params = {"symbols": stock, "limit": 1, "start": timestamp}
-        return self.__alpacaRequest("GET", self.ALPACA_DATA_URL+"v1/bars/5Min", head, params)
-
-    def getRealTimePrice(self, stock: str) -> float:
+    def getStockData(self, stock: str, interval: int, start: str) -> dict:
         head = self.__getHeader()
         params = {"symbols": stock, "limit": 1}
-        return self.__alpacaRequest("GET", self.ALPACA_DATA_URL+"v1/bars/5Min", head, params)
+        if start != "":
+            params["start"] = start
+        str_interval = str(interval)+"Min"
+        return self.__alpacaRequest("GET", self.ALPACA_DATA_URL+"v1/bars/"+str_interval, head, params)
+
+    def getRealTimePrice(self, stock: str, interval: int) -> float:
+        head = self.__getHeader()
+        params = {"symbols": stock, "limit": 1}
+        str_interval = str(interval)+"Min"
+        return self.__alpacaRequest("GET", self.ALPACA_DATA_URL+"v1/bars/"+str_interval, head, params)
         
     def getMarketTimes(self) -> dict:
         head = self.__getHeader()
